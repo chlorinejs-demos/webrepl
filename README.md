@@ -9,12 +9,17 @@ lein deps
 lein run
 ```
 See it online at: http://web-repl.herokuapp.com/index.html
+
 You will see a terminal box, then:
+```
 $ (import! [:private "boot.cl2"])
 $ (include-core!) ;; or (include-core-macros!)
+```
 to bootstrap Chlorine core language. Now check this:
+```
 $ (map inc (range 200))
-and see the result. Remember, the script is run in your browser. You have been warned :)
+```
+and see the result. Remember, the script is run in **your** browser. You have been warned :)
 
 For more information see the chlorine [wiki](https://github.com/myguidingstar/chlorine/wiki).
 
