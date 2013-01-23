@@ -1,6 +1,6 @@
 (ns web-repl.views.compile
   (:use [noir.core :only [defpage]]
-        [noir.response :only [content-type]]
+        [noir.response :only [redirect content-type]]
         [chlorine.js])
   (:require [noir.cookies :as cookies])
   (:import java.util.Date))
@@ -93,3 +93,5 @@ to Javascript string."
 
 (defpage "/core-cl2.js" []
   (:core-js preloaded))
+(defpage "/" []
+  (redirect "/index.html"))
