@@ -1,0 +1,10 @@
+syntax: glob
+/target/*
+pom.xml
+*.jar
+*.class
+/lib/
+/classes/
+.lein-deps-sum
+.cake
+.lein-failures

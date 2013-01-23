@@ -23,14 +23,25 @@
   [session-id]
   (let [age (- (now) (:timestamp (get @sessions session-id)))]
     (< max-session-age age)))
+(def ^{:doc "Pre-compiles Chlorine `dev` environment once
+and saves states to this var."}
+  preloaded
+  (binding [*temp-sym-count* (ref 999)
+            *last-sexpr*     (ref nil)
+            *macros*         (ref {})
+            *print-pretty*   true]
+    (let [core-js (js (include! [:private "dev.cl2"]))]
+      {:temp-sym-count @*temp-sym-count*
+       :macros @*macros*
+       :core-js core-js})))
 
 (defn start-new-session
   "Prepares starting vars for a new session"
   []
-  {:temp-sym-count (ref 999)
+  {:temp-sym-count (ref (:temp-sym-count preloaded))
+   :macros         (ref (:macros         preloaded))
    :last-sexpr (ref nil)
-   :timestamp (now)
-   :macros (ref {})})
+   :timestamp (now)})
 
 (defn gen-session-id
   "Generates a new session id (an UUID one).
@@ -79,3 +90,6 @@ to Javascript string."
     (content-type "text/plain"
         {:status 503
          :body "Server busy"})))
+
+(defpage "/core-cl2.js" []
+  (:core-js preloaded))
