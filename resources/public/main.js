@@ -99,7 +99,7 @@ $(function() {
     if (command) {
       try {
         var js_command = push_command(command);
-        jqconsole.Write('==> ' + window.eval(js_command) + '\n');
+        jqconsole.Write('==> ' + pr_str(window.eval(js_command)) + '\n');
       } catch (e) {
         jqconsole.Write('ERROR: ' + e.message + '\n');
       }
