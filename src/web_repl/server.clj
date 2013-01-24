@@ -1,11 +1,14 @@
 (ns web-repl.server
-  (:require [noir.server :as server]))
+  (:use [compojure.core :only [defroutes routes]]
+        [compojure.route :only [not-found resources]]
+        [noir.cookies :only [wrap-noir-cookies*]]
+        [noir.util.middleware :only [wrap-strip-trailing-slash]]
+        [compojure.handler :only [site]]
+        [web-repl.views.compile :only [compiling]]))
 
-(server/load-views-ns 'web-repl.views)
-
-(defn -main [& m]
-  (let [mode (keyword (or (first m) :dev))
-        port (Integer. (get (System/getenv) "PORT" "8080"))]
-    (server/start port {:mode mode
-                        :ns 'web-repl})))
-
+(def handler
+  (site (-> (routes compiling
+                    (resources "/")
+                    (not-found "404 - Not found"))
+            (wrap-noir-cookies*)
+            )))

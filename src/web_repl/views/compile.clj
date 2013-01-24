@@ -1,5 +1,5 @@
 (ns web-repl.views.compile
-  (:use [noir.core :only [defpage]]
+  (:use [compojure.core :refer [defroutes GET POST]]
         [noir.response :only [redirect content-type]]
         [chlorine.js])
   (:require [noir.cookies :as cookies])
@@ -23,6 +23,7 @@
   [session-id]
   (let [age (- (now) (:timestamp (get @sessions session-id)))]
     (< max-session-age age)))
+
 (def ^{:doc "Pre-compiles Chlorine `dev` environment once
 and saves states to this var."}
   preloaded
@@ -79,19 +80,20 @@ to Javascript string."
           (catch Throwable e
             (println e)))))))
 
-(defpage [:POST "/compile"] {:keys [command]}
-  (if-let [session-id (or (when-let [id (cookies/get :compile-session-id)]
-                                (and (get @sessions id)
-                                id))
-                             (new-session))]
-    (content-type "text/plain"
-        {:status 200
-         :body (compilation session-id (read-string command))})
-    (content-type "text/plain"
-        {:status 503
-         :body "Server busy"})))
-
-(defpage "/core-cl2.js" []
-  (:core-js preloaded))
-(defpage "/" []
-  (redirect "/index.html"))
+(defroutes compiling
+  (POST "/compile" [command]
+        (if-let [session-id (or (when-let [id (cookies/get :compile-session-id)]
+                                  (and (get @sessions id)
+                                       id))
+                                (new-session))]
+          (content-type "text/plain"
+                        {:status 200
+                         :body (compilation session-id (read-string command))})
+          (content-type "text/plain"
+                        {:status 503
+                         :body "Server busy"})))
+  (GET "/core-cl2.js" []
+       (:core-js preloaded))
+  (GET "/" []
+       (redirect "/index.html"))
+  )
