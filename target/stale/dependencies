@@ -1,1 +1,0 @@
-([:dependencies [[evaljs "0.1.2"] [lazytest "1.2.3"] [org.clojure/clojure "1.4.0"] [lib-noir "0.3.5"] [chlorine "1.7.0-SNAPSHOT"] [core-cl2 "1.0.0-SNAPSHOT"] [ring-server "0.2.5"]]])
