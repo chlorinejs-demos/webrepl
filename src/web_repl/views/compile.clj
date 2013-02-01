@@ -51,19 +51,26 @@ If maximum number of sessions exceeds, returns nil"
   (when (< (count @sessions) max-session-number)
     (str (java.util.UUID/randomUUID))))
 
+(defn kill-session
+  "Kills a session in case it's too old"
+  [session-id]
+  (dosync (commute sessions #(dissoc % session-id))))
+
+(defn kill-all
+  "Finds and kills all sessions that are too old."
+  []
+  (map kill-session
+   (filter too-old? (keys @sessions))))
+
 (defn new-session
   "Prepares a new session add adds it to global ref `sessions`.
 Returns nil if gen-session-id returns nil
  (which means maximum number of sessions exceeds)"
   []
+  (kill-all)
   (when-let [session-id (gen-session-id)]
     (dosync (commute sessions #(assoc % session-id (start-new-session))))
     (cookies/put! :compile-session-id session-id)))
-
-(defn kill-session
-  "Kill a session in case it's too old"
-  [session-id] ;; TODO: delete all child refs
-  (dosync (commute sessions #(dissoc % session-id))))
 
 (defn compilation
   "Compiles a Chlorine expression (already read by Clojure reader, not string)
@@ -81,6 +88,9 @@ to Javascript string."
             (println e)))))))
 
 (defroutes compiling
+  ;; test from CLI with this:
+  ;; curl -X POST http://localhost:3000/compile -d command='(def x 1)'
+
   (POST "/compile" [command]
         (if-let [session-id (or (when-let [id (cookies/get :compile-session-id)]
                                   (and (get @sessions id)

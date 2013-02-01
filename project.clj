@@ -6,6 +6,6 @@
                  [core-cl2 "1.0.0-SNAPSHOT"]]
   :plugins [[lein-ring "0.8.2"]]
   :ring {:handler web-repl.server/handler
-         :auto-reload? false}
+         }
   :aot :all
   :main web-repl.server)
