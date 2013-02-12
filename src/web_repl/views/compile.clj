@@ -98,7 +98,10 @@ to Javascript string."
                                 (new-session))]
           (content-type "text/plain"
                         {:status 200
-                         :body (compilation session-id (read-string command))})
+                         :body (let [expr (read-string command)]
+                                 (if (map? expr)
+                                   (format "(%s)" (compilation session-id expr))
+                                   (compilation session-id expr)))})
           (content-type "text/plain"
                         {:status 503
                          :body "Server busy"})))
