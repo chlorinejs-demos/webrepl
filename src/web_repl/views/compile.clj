@@ -31,7 +31,7 @@ and saves states to this var."}
             *last-sexpr*     (ref nil)
             *macros*         (ref {})
             *print-pretty*   true]
-    (let [core-js (js (include! [:resource "dev.cl2"]))]
+    (let [core-js (js (include! "r:/dev.cl2"))]
       {:temp-sym-count @*temp-sym-count*
        :macros @*macros*
        :core-js core-js})))
