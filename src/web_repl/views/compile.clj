@@ -1,11 +1,13 @@
 (ns web-repl.views.compile
   (:use [compojure.core :refer [defroutes GET POST]]
         [noir.response :only [redirect content-type]]
+        [clojure.stacktrace :only [print-cause-trace]]
+        [slingshot.slingshot]
         [chlorine.js])
   (:require [noir.cookies :as cookies])
   (:import java.util.Date))
 
-(def ^{:doc "Stores data (temp-sym-count, last-sexpr and macros) of sessions"}
+(def ^{:doc "Stores data (temp-sym-count and macros) of sessions"}
   sessions (ref {}))
 
 (defn now "Gets current time in miliseconds"
@@ -28,7 +30,6 @@
 and saves states to this var."}
   preloaded
   (binding [*temp-sym-count* (ref 999)
-            *last-sexpr*     (ref nil)
             *macros*         (ref {})
             *print-pretty*   true]
     (let [core-js (js (include! "r:/dev.cl2"))]
@@ -41,7 +42,6 @@ and saves states to this var."}
   []
   {:temp-sym-count (ref (:temp-sym-count preloaded))
    :macros         (ref (:macros         preloaded))
-   :last-sexpr (ref nil)
    :timestamp (now)})
 
 (defn gen-session-id
@@ -67,10 +67,14 @@ If maximum number of sessions exceeds, returns nil"
 Returns nil if gen-session-id returns nil
  (which means maximum number of sessions exceeds)"
   []
-  (kill-all)
-  (when-let [session-id (gen-session-id)]
-    (dosync (commute sessions #(assoc % session-id (start-new-session))))
-    (cookies/put! :compile-session-id session-id)))
+  (try+
+    (kill-all)
+    (when-let [session-id (gen-session-id)]
+      (dosync (commute sessions #(assoc % session-id (start-new-session))))
+      (cookies/put! :compile-session-id session-id))
+    (catch Throwable e
+      (println "new-session suck!!!")
+      (print-cause-trace e 10))))
 
 (defn compilation
   "Compiles a Chlorine expression (already read by Clojure reader, not string)
@@ -78,14 +82,25 @@ to Javascript string."
   [session-id expr]
   (let [session (get @sessions session-id)]
     (binding [*temp-sym-count* (:temp-sym-count session)
-              *last-sexpr*      (:last-sexpr session)
               *macros*          (:macros session)
               *print-pretty*   true]
       (with-out-str
-        (try
-          (js-emit expr)
-          (catch Throwable e
-            (println e)))))))
+        (try+
+         (js-emit expr)
+         (catch map? e
+           (js-emit
+            (with-out-str
+              (println "Compilation Error: ")
+              (println (:msg e))
+              (doseq [i (range (count (:causes e)))
+                      :let [cause (nth (:causes e) i)]]
+                (print (apply str (repeat (inc i) "  ")))
+                (println "caused by " cause))
+              (when-let [trace (:trace e)]
+                (print-cause-trace trace 3)))))
+         (catch Throwable e
+           (js-emit
+            (with-out-str (print-cause-trace e 3)))))))))
 
 (defroutes compiling
   ;; test from CLI with this:
