@@ -26,13 +26,13 @@
   (let [age (- (now) (:timestamp (get @sessions session-id)))]
     (< max-session-age age)))
 
-(def ^{:doc "Pre-compiles Chlorine `dev` environment once
+(def ^{:doc "Pre-compiles Chlorine `dev` strategy once
 and saves states to this var."}
   preloaded
   (binding [*temp-sym-count* (ref 999)
             *macros*         (ref {})
             *print-pretty*   true]
-    (let [core-js (js (include! "r:/dev.cl2"))]
+    (let [core-js (js (load-file "r:/strategies/dev.cl2"))]
       {:temp-sym-count @*temp-sym-count*
        :macros @*macros*
        :core-js core-js})))
